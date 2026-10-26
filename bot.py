@@ -1,7 +1,7 @@
 import os
 import asyncio
 import threading
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from supabase import create_client, Client
@@ -19,6 +19,31 @@ web_app = Flask(__name__)
 def home():
     return render_template("index.html")
 
+# API دریافت پلی‌لیست‌های کاربر
+@web_app.route("/api/playlists", methods=["GET"])
+def get_playlists():
+    telegram_id = request.args.get("telegram_id")
+    try:
+        response = supabase.table("playlists").select("*").eq("telegram_id", telegram_id).execute()
+        return jsonify(response.data)
+    except Exception as e:
+        return jsonify([])
+
+# API ثبت پلی‌لیست جدید
+@web_app.route("/api/playlists", methods=["POST"])
+def add_playlist():
+    data = request.json
+    try:
+        supabase.table("playlists").insert({
+            "telegram_id": data.get("telegram_id"),
+            "title": data.get("title"),
+            "description": data.get("description"),
+            "cover_emoji": data.get("cover_emoji", "🎵")
+        }).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 def run_web():
     port = int(os.environ.get("PORT", 8000))
     web_app.run(host="0.0.0.0", port=port)
@@ -26,7 +51,6 @@ def run_web():
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     
-    # ذخیره ایمن در دیتابیس (اگر خطایی رخ دهد، ربات متوقف نمی‌شود)
     try:
         supabase.table("users").upsert({
             "telegram_id": user.id,
@@ -36,11 +60,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print(f"Database Warning in start: {e}")
     
-    # دکمه تایید شماره تماس
     contact_btn = KeyboardButton("📱 تایید و ارسال شماره تماس", request_contact=True)
     reply_markup = ReplyKeyboardMarkup([[contact_btn]], resize_keyboard=True, one_time_keyboard=True)
     
-    # دکمه شیشه‌ای برای تست فوری مینی‌اپ
     webapp_btn = InlineKeyboardButton(
         text="🎧 ورود مستقیم به مینی‌اپ اسپاتیفای",
         web_app=WebAppInfo(url=RENDER_EXTERNAL_URL)
