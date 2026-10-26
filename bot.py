@@ -6,10 +6,15 @@ from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardR
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from supabase import create_client, Client
 
+# مقادیر امنیتی با پیش‌فرض‌های ضدخطا
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://placeholder.supabase.co").strip()
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "placeholder_key").strip()
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://igeghcaikessmnwsahch.supabase.co").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "sb_publishable_jWSURt-uHqUWp24bQ-kbkA_0MTZL8Mo").strip()
 RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "https://spotify-mini-app.onrender.com").strip()
+
+# پاکسازی خودکار کاراکترهای اضافی احتمالی از ابتدای URL
+if SUPABASE_URL.startswith("SUPABASE_URL="):
+    SUPABASE_URL = SUPABASE_URL.split("=")[1].strip()
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
