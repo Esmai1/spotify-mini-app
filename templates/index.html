@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spotify Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        :root {
+            --bg-color: #f2f4f8;
+            --text-color: #121212;
+            --subtext-color: #555;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --accent: #1DB954;
+            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+        body.dark-mode {
+            --bg-color: #0d0d0d;
+            --text-color: #ffffff;
+            --subtext-color: #b3b3b3;
+            --glass-bg: rgba(30, 30, 30, 0.60);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Vazirmatn', sans-serif;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 140px;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at top right, rgba(29, 185, 84, 0.22), transparent 55%);
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            margin: 12px 16px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            box-shadow: var(--card-shadow);
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #116b30);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(29, 185, 84, 0.35);
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .theme-toggle {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 9px 14px;
+            border-radius: 16px;
+            cursor: pointer;
+            color: var(--text-color);
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: var(--card-shadow);
+        }
+        .container {
+            padding: 10px 18px;
+        }
+        .shazam-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 18px;
+            margin-bottom: 24px;
+            box-shadow: var(--card-shadow);
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            background: rgba(128, 128, 128, 0.08);
+            color: var(--text-color);
+            outline: none;
+            font-size: 13px;
+        }
+        .btn-green {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(29, 185, 84, 0.35);
+        }
+        .section-title {
+            font-size: 17px;
+            font-weight: 800;
+            margin: 18px 0 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .playlist-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+        .playlist-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 12px;
+            box-shadow: var(--card-shadow);
+        }
+        .playlist-cover {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #1db954, #121212);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 12px;
+            left: 16px;
+            right: 16px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: var(--card-shadow);
+            z-index: 100;
+        }
+        .nav-item {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--subtext-color);
+            cursor: pointer;
+        }
+        .nav-item.active {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="user-profile">
+            <div class="avatar" id="user-avatar">🎵</div>
+            <div>
+                <div id="user-name" style="font-weight: 800; font-size: 15px;">کاربر مهمان</div>
+                <div id="user-id" style="font-size: 11px; color: var(--subtext-color);">خوش آمدید</div>
+            </div>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 حالت شب</button>
+    </div>
+
+    <div class="container">
+        <div class="shazam-box">
+            <div style="font-weight: 800; font-size: 14px;">🔍 تشخیص و دانلود موزیک</div>
+            <div style="font-size: 12px; color: var(--subtext-color); margin-top: 4px;">لینک اسپاتیفای، ریلز اینستاگرام یا تیک‌تاک:</div>
+            <div class="input-group">
+                <input type="text" id="music-link" placeholder="https://...">
+                <button class="btn-green" onclick="findMusic()">یافتن</button>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <span>پلی‌لیست‌های من</span>
+            <span style="color: var(--accent); font-size: 13px; cursor: pointer;" onclick="createPlaylist()">+ ساخت پلی‌لیست</span>
+        </div>
+
+        <div class="playlist-grid" id="playlist-container">
+            <!-- پلی‌لیست‌ها به صورت داینامیک اینجا بارگذاری می‌شوند -->
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active">🏠 خانه</div>
+        <div class="nav-item" onclick="alert('به زودی...')">🌎 کاوش عمومی</div>
+        <div class="nav-item">📚 کتابخانه</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let currentUserTelegramId = null;
+
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            currentUserTelegramId = user.id;
+            document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+            document.getElementById('user-id').innerText = user.username ? '@' + user.username : 'ID: ' + user.id;
+            if (user.photo_url) {
+                document.getElementById('user-avatar').innerHTML = `<img src="${user.photo_url}" alt="Avatar">`;
+            } else {
+                document.getElementById('user-avatar').innerText = user.first_name.charAt(0);
+            }
+            loadPlaylists(user.id);
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('theme-btn').innerText = isDark ? '☀️ حالت روز' : '🌙 حالت شب';
+        }
+
+        // خواندن پلی‌لیست‌ها از سرور
+        async function loadPlaylists(telegramId) {
+            try {
+                const response = await fetch(`/api/playlists?telegram_id=${telegramId}`);
+                const playlists = await response.json();
+                const container = document.getElementById('playlist-container');
+                container.innerHTML = '';
+
+                if (playlists.length === 0) {
+                    container.innerHTML = `<div style="font-size: 12px; color: var(--subtext-color);">هنوز پلی‌لیستی نساخته‌اید.</div>`;
+                    return;
+                }
+
+                playlists.forEach(pl => {
+                    container.innerHTML += `
+                        <div class="playlist-card">
+                            <div class="playlist-cover">${pl.cover_emoji || '🎵'}</div>
+                            <div style="font-weight: bold; font-size: 14px;">${pl.title}</div>
+                            <div style="font-size: 11px; color: var(--subtext-color);">${pl.description || 'پلی‌لیست شخصی'}</div>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error("Error loading playlists:", e);
+            }
+        }
+
+        // ساخت پلی‌لیست جدید و ذخیره در سرور
+        async function createPlaylist() {
+            const title = prompt('نام پلی‌لیست جدید را وارد کنید:');
+            if (!title) return;
+            const description = prompt('توضیحات کوتاه برای پلی‌لیست (اختیاری):') || '';
+
+            if (!currentUserTelegramId) {
+                alert('شناسه کاربر تلگرام یافت نشد!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/playlists', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram_id: currentUserTelegramId,
+                        title: title,
+                        description: description,
+                        cover_emoji: '🔥'
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    loadPlaylists(currentUserTelegramId);
+                } else {
+                    alert('خطا در ذخیره پلی‌لیست');
+                }
+            } catch (e) {
+                alert('خطای ارتباط با سرور');
+            }
+        }
+
+        function findMusic() {
+            const link = document.getElementById('music-link').value;
+            if (!link) return alert('لطفاً لینک را وارد کنید!');
+            tg.showAlert('لینک دریافت شد و در صف پردازش هوشمند قرار گرفت.');
+        }
+    </script>
+</body>
+</html>
