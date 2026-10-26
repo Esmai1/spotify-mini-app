@@ -7,9 +7,9 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 from supabase import create_client, Client
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
-RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "https://google.com").strip()
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://placeholder.supabase.co").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "placeholder_key").strip()
+RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "https://spotify-mini-app.onrender.com").strip()
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
