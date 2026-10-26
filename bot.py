@@ -1,4 +1,5 @@
 import os
+import asyncio
 import threading
 from flask import Flask
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
@@ -6,13 +7,13 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 from supabase import create_client, Client
 
 # دریافت متغیرهای امنیتی از تنظیمات سرور
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# وب‌سرور سبک برای روشن نگه داشتن ۲۴ ساعته Koyeb
+# وب‌سرور سبک برای روشن نگه داشتن ۲۴ ساعته سرور
 web_app = Flask(__name__)
 
 @web_app.route("/")
@@ -79,6 +80,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     # اجرای وب‌سرور در پس‌زمینه
     threading.Thread(target=run_web, daemon=True).start()
+    
+    # سازگاری با Python 3.14 در سرور Render
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
     # اجرای ربات تلگرام
     app = ApplicationBuilder().token(BOT_TOKEN).build()
