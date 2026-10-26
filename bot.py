@@ -38,15 +38,18 @@ def get_playlists():
 @web_app.route("/api/playlists", methods=["POST"])
 def add_playlist():
     data = request.json
+    print("Received playlist data:", data)  # چاپ اطلاعات در لاگ Render
     try:
-        supabase.table("playlists").insert({
+        response = supabase.table("playlists").insert({
             "telegram_id": data.get("telegram_id"),
             "title": data.get("title"),
             "description": data.get("description"),
             "cover_emoji": data.get("cover_emoji", "🎵")
         }).execute()
+        print("Supabase insert response:", response)
         return jsonify({"success": True})
     except Exception as e:
+        print("ERROR saving playlist:", str(e))  # چاپ خطای دقیق در لاگ
         return jsonify({"success": False, "error": str(e)})
 
 def run_web():
