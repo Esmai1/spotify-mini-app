@@ -1,56 +1,73 @@
 import os
 import asyncio
 import threading
-from flask import Flask
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from flask import Flask, render_template
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from supabase import create_client, Client
 
-# دریافت متغیرهای امنیتی از تنظیمات سرور
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
+RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "https://google.com").strip()
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# وب‌سرور سبک برای روشن نگه داشتن ۲۴ ساعته سرور
 web_app = Flask(__name__)
 
 @web_app.route("/")
 def home():
-    return "Spotify Mini App Bot is Alive!"
+    return render_template("index.html")
 
 def run_web():
     port = int(os.environ.get("PORT", 8000))
     web_app.run(host="0.0.0.0", port=port)
 
-# دستورات ربات تلگرام
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     
-    # ذخیره اطلاعات اولیه تلگرام کاربر در دیتابیس
-    supabase.table("users").upsert({
-        "telegram_id": user.id,
-        "username": user.username,
-        "first_name": user.first_name
-    }).execute()
+    # ذخیره ایمن در دیتابیس (اگر خطایی رخ دهد، ربات متوقف نمی‌شود)
+    try:
+        supabase.table("users").upsert({
+            "telegram_id": user.id,
+            "username": user.username,
+            "first_name": user.first_name
+        }).execute()
+    except Exception as e:
+        print(f"Database Warning in start: {e}")
     
+    # دکمه تایید شماره تماس
     contact_btn = KeyboardButton("📱 تایید و ارسال شماره تماس", request_contact=True)
     reply_markup = ReplyKeyboardMarkup([[contact_btn]], resize_keyboard=True, one_time_keyboard=True)
     
+    # دکمه شیشه‌ای برای تست فوری مینی‌اپ
+    webapp_btn = InlineKeyboardButton(
+        text="🎧 ورود مستقیم به مینی‌اپ اسپاتیفای",
+        web_app=WebAppInfo(url=RENDER_EXTERNAL_URL)
+    )
+    inline_markup = InlineKeyboardMarkup([[webapp_btn]])
+    
     await update.message.reply_text(
         f"سلام {user.first_name} عزیز! به مینی‌اپ موزیک خوش آمدید 🎵\n\n"
-        "برای ساخت پروفایل اختصاصی، لطفاً دکمه زیر را لمس کنید:",
+        "برای تکمیل ثبت‌نام، دکمه پایین صفحه (ارسال شماره تماس) را لمس کنید:",
         reply_markup=reply_markup
+    )
+    
+    await update.message.reply_text(
+        "همچنین می‌توانید همین الان محیط مینی‌اپ را باز کنید:",
+        reply_markup=inline_markup
     )
 
 async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     contact = update.message.contact
     user_id = update.effective_user.id
     
-    supabase.table("users").update({
-        "phone_number": contact.phone_number
-    }).eq("telegram_id", user_id).execute()
+    try:
+        supabase.table("users").update({
+            "phone_number": contact.phone_number
+        }).eq("telegram_id", user_id).execute()
+    except Exception as e:
+        print(f"Database Warning in contact: {e}")
     
     context.user_data["waiting_for_email"] = True
     await update.message.reply_text(
@@ -65,27 +82,35 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if context.user_data.get("waiting_for_email"):
         if "@" in text and "." in text:
-            supabase.table("users").update({
-                "email": text
-            }).eq("telegram_id", user_id).execute()
+            try:
+                supabase.table("users").update({
+                    "email": text
+                }).eq("telegram_id", user_id).execute()
+            except Exception as e:
+                print(f"Database Warning in email: {e}")
             
             context.user_data["waiting_for_email"] = False
+            
+            webapp_btn = InlineKeyboardButton(
+                text="🎧 باز کردن مینی‌اپ اسپاتیفای",
+                web_app=WebAppInfo(url=RENDER_EXTERNAL_URL)
+            )
+            inline_markup = InlineKeyboardMarkup([[webapp_btn]])
+            
             await update.message.reply_text(
                 "🎉 تبریک! پروفایل شما با موفقیت تکمیل شد.\n"
-                "اطلاعات شما در سرور ذخیره شد و آماده ورود به مینی‌اپ هستید."
+                "حالا می‌توانید وارد محیط اختصاصی مینی‌اپ شوید:",
+                reply_markup=inline_markup
             )
         else:
             await update.message.reply_text("❌ فرمت ایمیل صحیح نیست. لطفاً یک ایمیل معتبر وارد کنید:")
 
 def main():
-    # اجرای وب‌سرور در پس‌زمینه
     threading.Thread(target=run_web, daemon=True).start()
     
-    # سازگاری با Python 3.14 در سرور Render
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     
-    # اجرای ربات تلگرام
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.CONTACT, handle_contact))
